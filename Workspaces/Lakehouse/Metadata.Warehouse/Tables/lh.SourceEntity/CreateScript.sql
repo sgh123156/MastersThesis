@@ -1,0 +1,17 @@
+CREATE TABLE [lh].[SourceEntity](
+	[IsEnabled] [bit] NULL,
+	[SourceSystem] [varchar](50) NULL,
+	[SourceSchema] [varchar](50) NULL,
+	[SourceTable] [varchar](50) NULL,
+	[SourceKey] [varchar](400) NULL,
+	[SourceDateColumn] [varchar](100) NULL,
+	[LoadMode] [int] NULL,
+	[BronzeLandingTimestamp] [datetime2](2) NULL,
+	[RowsIngestedBronzeLanding] [int] NULL,
+	[BronzeRawTimestamp] [datetime2](2) NULL,
+	[RowsIngestedBronzeRaw] [int] NULL,
+	[SilverOperationalTimestamp] [datetime2](2) NULL,
+	[RowsIngestedSilverOperational] [int] NULL,
+	[Notebook] [varchar](50) NULL,
+	[SoftDeletes] [bit] NULL
+) ON [PRIMARY]

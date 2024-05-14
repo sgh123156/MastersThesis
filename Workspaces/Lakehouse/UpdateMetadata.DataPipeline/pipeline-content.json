@@ -1,0 +1,98 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "Trigger metadata update",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 3,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "storedProcedureName": "[lh].[UpdateMetadata]",
+          "storedProcedureParameters": {
+            "RowCount": {
+              "value": {
+                "value": "@pipeline().parameters.RowCount",
+                "type": "Expression"
+              },
+              "type": "Int32"
+            },
+            "SourceSchema": {
+              "value": {
+                "value": "@pipeline().parameters.SourceSchema",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "SourceSystem": {
+              "value": {
+                "value": "@pipeline().parameters.SourceSystem",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "SourceTable": {
+              "value": {
+                "value": "@pipeline().parameters.SourceTable",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "Stage": {
+              "value": {
+                "value": "@pipeline().parameters.Stage",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "Watermark": {
+              "value": {
+                "value": "@pipeline().parameters.Watermark",
+                "type": "Expression"
+              },
+              "type": "Datetime"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "Metadata",
+          "objectId": "6b10ef3e-c6d7-4eaf-b654-b8583631f850",
+          "properties": {
+            "annotations": [],
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "endpoint": "o2ohi323u22ulebgw3gnntkcui-6fy2zjab46ou5gefexgqjfvh24.datawarehouse.fabric.microsoft.com",
+              "artifactId": "6b10ef3e-c6d7-4eaf-b654-b8583631f850"
+            },
+            "tridentArtifactType": "DataWarehouse"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Stage": {
+        "type": "string"
+      },
+      "RowCount": {
+        "type": "int"
+      },
+      "SourceSchema": {
+        "type": "string"
+      },
+      "SourceTable": {
+        "type": "string"
+      },
+      "SourceSystem": {
+        "type": "string"
+      },
+      "Watermark": {
+        "type": "string"
+      }
+    }
+  }
+}

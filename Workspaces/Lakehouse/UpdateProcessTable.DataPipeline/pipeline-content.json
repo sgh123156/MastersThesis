@@ -1,0 +1,88 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "Invoke stored procedure",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "storedProcedureName": "[lh].[UpdateProcessTable]",
+          "storedProcedureParameters": {
+            "PipelineID": {
+              "value": {
+                "value": "@pipeline().parameters.PipelineID",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "Schema": {
+              "value": {
+                "value": "@pipeline().parameters.Schema",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "System": {
+              "value": {
+                "value": "@pipeline().parameters.System",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "Table": {
+              "value": {
+                "value": "@pipeline().parameters.Table",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "WhenExecuted": {
+              "value": {
+                "value": "@pipeline().parameters.WhenExecuted",
+                "type": "Expression"
+              },
+              "type": "String"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "Metadata",
+          "objectId": "6b10ef3e-c6d7-4eaf-b654-b8583631f850",
+          "properties": {
+            "annotations": [],
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "endpoint": "o2ohi323u22ulebgw3gnntkcui-6fy2zjab46ou5gefexgqjfvh24.datawarehouse.fabric.microsoft.com",
+              "artifactId": "6b10ef3e-c6d7-4eaf-b654-b8583631f850"
+            },
+            "tridentArtifactType": "DataWarehouse"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "System": {
+        "type": "string"
+      },
+      "Schema": {
+        "type": "string"
+      },
+      "Table": {
+        "type": "string"
+      },
+      "WhenExecuted": {
+        "type": "string"
+      },
+      "PipelineID": {
+        "type": "string"
+      }
+    }
+  }
+}

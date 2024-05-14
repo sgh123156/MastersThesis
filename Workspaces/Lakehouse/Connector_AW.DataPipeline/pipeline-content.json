@@ -1,0 +1,247 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Copy",
+        "typeProperties": {
+          "source": {
+            "type": "SqlServerSource",
+            "sqlReaderQuery": {
+              "value": "select @{variables('Query')} from @{pipeline().parameters.SourceSchema}.@{pipeline().parameters.SourceTable}@{variables('Predicate')}",
+              "type": "Expression"
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00",
+            "additionalColumns": [
+              {
+                "name": "BronzeLandingTimestamp",
+                "value": {
+                  "value": "@utcnow()",
+                  "type": "Expression"
+                }
+              },
+              {
+                "name": "Source",
+                "value": {
+                  "value": "@pipeline().parameters.SourceSystem",
+                  "type": "Expression"
+                }
+              }
+            ],
+            "datasetSettings": {
+              "type": "SqlServerTable",
+              "typeProperties": {
+                "database": "AdventureWorks2022"
+              },
+              "schema": [],
+              "externalReferences": {
+                "connection": "fa80c101-d34f-4c40-9ba8-c3a5469ba6d6"
+              },
+              "annotations": []
+            }
+          },
+          "sink": {
+            "type": "ParquetSink",
+            "storeSettings": {
+              "type": "LakehouseWriteSettings"
+            },
+            "formatSettings": {
+              "type": "ParquetWriteSettings",
+              "enableVertiParquet": true
+            },
+            "datasetSettings": {
+              "type": "Parquet",
+              "typeProperties": {
+                "location": {
+                  "type": "LakehouseLocation",
+                  "folderPath": {
+                    "value": "@{pipeline().parameters.SourceSystem}/@{pipeline().parameters.SourceSchema}/@{pipeline().parameters.LoadMode}/@{pipeline().parameters.SourceTable}/@{variables('FilePath')}",
+                    "type": "Expression"
+                  },
+                  "fileName": {
+                    "value": "@{pipeline().parameters.SourceTable}.parquet",
+                    "type": "Expression"
+                  }
+                },
+                "compressionCodec": "snappy"
+              },
+              "schema": [],
+              "linkedService": {
+                "properties": {
+                  "type": "Lakehouse",
+                  "typeProperties": {
+                    "artifactId": "532be868-fb7a-49f6-8bb1-6f773deb979a",
+                    "workspaceId": "00000000-0000-0000-0000-000000000000",
+                    "rootFolder": "Files"
+                  },
+                  "annotations": []
+                },
+                "name": "Bronze"
+              },
+              "annotations": []
+            }
+          },
+          "translator": {
+            "type": "TabularTranslator",
+            "typeConversion": true,
+            "typeConversionSettings": {
+              "allowDataTruncation": true,
+              "treatBooleanAsNumber": false
+            }
+          },
+          "enableStaging": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Copy data",
+        "dependsOn": [
+          {
+            "activity": "Set File path",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "Set Query",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "Set predicate",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "pipelineReturnValue",
+          "value": [
+            {
+              "key": "RowCount",
+              "value": {
+                "type": "Expression",
+                "content": "@activity('Copy data').output"
+              }
+            }
+          ],
+          "setSystemVariable": true
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Get Output",
+        "dependsOn": [
+          {
+            "activity": "Copy data",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "FilePath",
+          "value": {
+            "value": "@if(\n    equals(pipeline().parameters.KeysOnly, true),\n    'keys',\n    pipeline().parameters.FilePath\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Set File path",
+        "dependsOn": []
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "Query",
+          "value": {
+            "value": "@if(\n    equals(pipeline().parameters.KeysOnly, true),\n    pipeline().parameters.SourceKey,\n    '*'\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Set Query",
+        "dependsOn": []
+      },
+      {
+        "type": "SetVariable",
+        "typeProperties": {
+          "variableName": "Predicate",
+          "value": {
+            "value": "@if(\n    equals(pipeline().parameters.KeysOnly, true),\n    '',\n    pipeline().parameters.TimestampPredicate\n)",
+            "type": "Expression"
+          }
+        },
+        "policy": {
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Set predicate",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "SourceSystem": {
+        "type": "string",
+        "defaultValue": "AW"
+      },
+      "SourceSchema": {
+        "type": "string",
+        "defaultValue": "Sales"
+      },
+      "SourceTable": {
+        "type": "string",
+        "defaultValue": "Currency"
+      },
+      "LoadMode": {
+        "type": "int",
+        "defaultValue": 0
+      },
+      "SourceDateColumn": {
+        "type": "string",
+        "defaultValue": "ModifiedDate"
+      },
+      "TimestampPredicate": {
+        "type": "string"
+      },
+      "FilePath": {
+        "type": "string"
+      },
+      "SourceKey": {
+        "type": "string"
+      },
+      "KeysOnly": {
+        "type": "bool"
+      }
+    },
+    "variables": {
+      "FilePath": {
+        "type": "String"
+      },
+      "Query": {
+        "type": "String"
+      },
+      "Predicate": {
+        "type": "String"
+      }
+    }
+  }
+}

@@ -1,0 +1,888 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": "[lh].[GetMetadata]",
+            "storedProcedureParameters": {
+              "SourceSystem": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.SourceSystem",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "6b10ef3e-c6d7-4eaf-b654-b8583631f850",
+                  "endpoint": "o2ohi323u22ulebgw3gnntkcui-6fy2zjab46ou5gefexgqjfvh24.datawarehouse.fabric.microsoft.com"
+                },
+                "annotations": []
+              },
+              "name": "Metadata"
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Lookup metadata",
+        "dependsOn": []
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "isSequential": true,
+          "items": {
+            "value": "@activity('Lookup metadata').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "Switch",
+              "typeProperties": {
+                "on": {
+                  "value": "@item().SourceSystem",
+                  "type": "Expression"
+                },
+                "cases": [
+                  {
+                    "value": "AW",
+                    "activities": [
+                      {
+                        "type": "ExecutePipeline",
+                        "typeProperties": {
+                          "pipeline": {
+                            "referenceName": "48004f08-9069-4ca3-b6d6-f699a0e36bbc",
+                            "type": "PipelineReference"
+                          },
+                          "parameters": {
+                            "SourceSystem": {
+                              "value": "@item().SourceSystem",
+                              "type": "Expression"
+                            },
+                            "SourceSchema": {
+                              "value": "@item().SourceSchema",
+                              "type": "Expression"
+                            },
+                            "SourceTable": {
+                              "value": "@item().SourceTable",
+                              "type": "Expression"
+                            },
+                            "LoadMode": {
+                              "value": "@item().LoadMode",
+                              "type": "Expression"
+                            },
+                            "SourceDateColumn": {
+                              "value": "@item().SourceDateColumn",
+                              "type": "Expression"
+                            },
+                            "TimestampPredicate": {
+                              "value": "@item().LandingTSPredicate",
+                              "type": "Expression"
+                            },
+                            "FilePath": {
+                              "value": "@item().IncrementalPath",
+                              "type": "Expression"
+                            },
+                            "SourceKey": {
+                              "value": "@item().SourceKey",
+                              "type": "Expression"
+                            },
+                            "KeysOnly": false
+                          },
+                          "waitOnCompletion": true
+                        },
+                        "policy": {
+                          "secureInput": false
+                        },
+                        "name": "Invoke connector AW",
+                        "dependsOn": []
+                      },
+                      {
+                        "type": "SetVariable",
+                        "typeProperties": {
+                          "variableName": "OutputConnector",
+                          "value": {
+                            "value": "@string(activity('Invoke connector AW').output.pipelineReturnValue.RowCount)",
+                            "type": "Expression"
+                          }
+                        },
+                        "policy": {
+                          "secureInput": false,
+                          "secureOutput": false
+                        },
+                        "name": "Get Output AW",
+                        "dependsOn": [
+                          {
+                            "activity": "Invoke connector AW",
+                            "dependencyConditions": [
+                              "Succeeded"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "value": "CS",
+                    "activities": [
+                      {
+                        "type": "ExecutePipeline",
+                        "typeProperties": {
+                          "pipeline": {
+                            "referenceName": "4099160e-d55d-4c94-b5b2-464d012fe630",
+                            "type": "PipelineReference"
+                          },
+                          "parameters": {
+                            "SourceSystem": {
+                              "value": "@item().SourceSystem",
+                              "type": "Expression"
+                            },
+                            "SourceSchema": {
+                              "value": "@item().SourceSchema",
+                              "type": "Expression"
+                            },
+                            "SourceTable": {
+                              "value": "@item().SourceTable",
+                              "type": "Expression"
+                            },
+                            "LoadMode": {
+                              "value": "@item().LoadMode",
+                              "type": "Expression"
+                            },
+                            "SourceDateColumn": {
+                              "value": "@item().SourceDateColumn",
+                              "type": "Expression"
+                            },
+                            "TimestampPredicate": {
+                              "value": "@item().LandingTSPredicate",
+                              "type": "Expression"
+                            },
+                            "FilePath": {
+                              "value": "@item().IncrementalPath",
+                              "type": "Expression"
+                            },
+                            "SourceKey": {
+                              "value": "@item().SourceKey",
+                              "type": "Expression"
+                            },
+                            "KeysOnly": false
+                          },
+                          "waitOnCompletion": true
+                        },
+                        "policy": {
+                          "secureInput": false
+                        },
+                        "name": "Invoke connector Contoso",
+                        "dependsOn": []
+                      },
+                      {
+                        "type": "SetVariable",
+                        "typeProperties": {
+                          "variableName": "OutputConnector",
+                          "value": {
+                            "value": "@string(activity('Invoke connector Contoso').output.pipelineReturnValue.RowCount)",
+                            "type": "Expression"
+                          }
+                        },
+                        "policy": {
+                          "secureInput": false,
+                          "secureOutput": false
+                        },
+                        "name": "Get Output Contoso",
+                        "dependsOn": [
+                          {
+                            "activity": "Invoke connector Contoso",
+                            "dependencyConditions": [
+                              "Succeeded"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "defaultActivities": [
+                  {
+                    "type": "Fail",
+                    "typeProperties": {
+                      "message": "SourceSystem is not onboarded yet.",
+                      "errorCode": "500"
+                    },
+                    "name": "Throw error",
+                    "dependsOn": []
+                  }
+                ]
+              },
+              "name": "Ingest data",
+              "dependsOn": []
+            },
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "8618761c-207c-4272-8256-d8113ca490e9",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "Stage": "Bronze-Landing",
+                  "RowCount": {
+                    "value": "@json(variables('OutputConnector')).rowsCopied\n",
+                    "type": "Expression"
+                  },
+                  "SourceSchema": {
+                    "value": "@item().SourceSchema",
+                    "type": "Expression"
+                  },
+                  "SourceTable": {
+                    "value": "@item().SourceTable",
+                    "type": "Expression"
+                  },
+                  "SourceSystem": {
+                    "value": "@pipeline().parameters.SourceSystem",
+                    "type": "Expression"
+                  },
+                  "Watermark": {
+                    "value": "@formatDateTime(utcnow())",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "Update metadata bronze-landing",
+              "dependsOn": [
+                {
+                  "activity": "Ingest data",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "TridentNotebook",
+              "typeProperties": {
+                "notebookId": {
+                  "value": "@item().Notebook",
+                  "type": "Expression"
+                },
+                "workspaceId": "864df5f2-fb36-4669-8806-6317e0b989d2"
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "Schema declaration",
+              "dependsOn": [
+                {
+                  "activity": "Update metadata bronze-landing",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "TridentNotebook",
+              "typeProperties": {
+                "notebookId": "68d8d66a-2687-4ff4-86fd-55c8765bae8e",
+                "workspaceId": "864df5f2-fb36-4669-8806-6317e0b989d2",
+                "parameters": {
+                  "Schema": {
+                    "value": {
+                      "value": "@activity('Schema declaration').output.result.exitValue",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SourceSystem": {
+                    "value": {
+                      "value": "@item().SourceSystem",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SourceSchema": {
+                    "value": {
+                      "value": "@item().SourceSchema",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "LoadMode": {
+                    "value": {
+                      "value": "@item().LoadMode",
+                      "type": "Expression"
+                    },
+                    "type": "int"
+                  },
+                  "IncrementalPath": {
+                    "value": {
+                      "value": "@item().IncrementalPath",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SourceTable": {
+                    "value": {
+                      "value": "@item().SourceTable",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SoftDeletes": {
+                    "value": {
+                      "value": "@item().ValidForSoftDeletes",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SourceKey": {
+                    "value": {
+                      "value": "@item().SourceKey",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  }
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "Schema validation and load to Bronze",
+              "dependsOn": [
+                {
+                  "activity": "Schema declaration",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                },
+                {
+                  "activity": "Ingest data - incremental",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "TridentNotebook",
+              "typeProperties": {
+                "notebookId": "44d86708-9b39-4e96-a2a1-02f55d4715f9",
+                "workspaceId": "cac9ca61-0d6f-4a0f-9f32-ebc82c0b2536",
+                "parameters": {
+                  "SourceSystem": {
+                    "value": {
+                      "value": "@item().SourceSystem ",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SourceSchema": {
+                    "value": {
+                      "value": "@item().SourceSchema",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SourceTable": {
+                    "value": {
+                      "value": "@item().SourceTable",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "LoadMode": {
+                    "value": {
+                      "value": "@item().LoadMode",
+                      "type": "Expression"
+                    },
+                    "type": "int"
+                  },
+                  "BronzeLayer": {
+                    "value": {
+                      "value": "@item().BronzeLayer",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SilverLayer": {
+                    "value": {
+                      "value": "@item().SilverLayer",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "Workspace": {
+                    "value": {
+                      "value": "@item().Workspace",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "Schema": {
+                    "value": {
+                      "value": "@activity('Schema declaration').output.result.exitValue",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SoftDeletesEnabled": {
+                    "value": {
+                      "value": "@item().SoftDeletes",
+                      "type": "Expression"
+                    },
+                    "type": "int"
+                  },
+                  "ValidForSoftDeletes": {
+                    "value": {
+                      "value": "@item().ValidForSoftDeletes",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "Watermark": {
+                    "value": {
+                      "value": "@json(activity('Schema validation and load to Bronze').output.result.exitValue).Watermark",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "Stage": {
+                    "value": {
+                      "value": "Silver Operational",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  }
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "Load to Silver Operational",
+              "dependsOn": [
+                {
+                  "activity": "Update metadata Bronze",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Switch",
+              "typeProperties": {
+                "on": {
+                  "value": "@item().ValidForSoftDeletes",
+                  "type": "Expression"
+                },
+                "cases": [
+                  {
+                    "value": "AW",
+                    "activities": [
+                      {
+                        "type": "ExecutePipeline",
+                        "typeProperties": {
+                          "pipeline": {
+                            "referenceName": "48004f08-9069-4ca3-b6d6-f699a0e36bbc",
+                            "type": "PipelineReference"
+                          },
+                          "parameters": {
+                            "SourceSystem": {
+                              "value": "@item().SourceSystem",
+                              "type": "Expression"
+                            },
+                            "SourceSchema": {
+                              "value": "@item().SourceSchema",
+                              "type": "Expression"
+                            },
+                            "SourceTable": {
+                              "value": "@item().SourceTable",
+                              "type": "Expression"
+                            },
+                            "LoadMode": {
+                              "value": "@item().LoadMode",
+                              "type": "Expression"
+                            },
+                            "SourceDateColumn": {
+                              "value": "@item().SourceDateColumn",
+                              "type": "Expression"
+                            },
+                            "TimestampPredicate": {
+                              "value": "@item().LandingTSPredicate",
+                              "type": "Expression"
+                            },
+                            "FilePath": {
+                              "value": "@item().IncrementalPath",
+                              "type": "Expression"
+                            },
+                            "SourceKey": {
+                              "value": "@item().SourceKey",
+                              "type": "Expression"
+                            },
+                            "KeysOnly": true
+                          },
+                          "waitOnCompletion": true
+                        },
+                        "policy": {
+                          "secureInput": false
+                        },
+                        "name": "Invoke connector - keys AW",
+                        "dependsOn": []
+                      }
+                    ]
+                  },
+                  {
+                    "value": "CS",
+                    "activities": [
+                      {
+                        "type": "ExecutePipeline",
+                        "typeProperties": {
+                          "pipeline": {
+                            "referenceName": "4099160e-d55d-4c94-b5b2-464d012fe630",
+                            "type": "PipelineReference"
+                          },
+                          "parameters": {
+                            "SourceSystem": {
+                              "value": "@item().SourceSystem",
+                              "type": "Expression"
+                            },
+                            "SourceSchema": {
+                              "value": "@item().SourceSchema",
+                              "type": "Expression"
+                            },
+                            "SourceTable": {
+                              "value": "@item().SourceTable",
+                              "type": "Expression"
+                            },
+                            "LoadMode": {
+                              "value": "@item().LoadMode",
+                              "type": "Expression"
+                            },
+                            "SourceDateColumn": {
+                              "value": "@item().SourceDateColumn",
+                              "type": "Expression"
+                            },
+                            "TimestampPredicate": {
+                              "value": "@item().LandingTSPredicate",
+                              "type": "Expression"
+                            },
+                            "FilePath": {
+                              "value": "@item().IncrementalPath",
+                              "type": "Expression"
+                            },
+                            "SourceKey": {
+                              "value": "@item().SourceKey",
+                              "type": "Expression"
+                            },
+                            "KeysOnly": true
+                          },
+                          "waitOnCompletion": true
+                        },
+                        "policy": {
+                          "secureInput": false
+                        },
+                        "name": "Invoke connector - keys Contoso",
+                        "dependsOn": []
+                      }
+                    ]
+                  }
+                ],
+                "defaultActivities": []
+              },
+              "name": "Ingest data - incremental",
+              "dependsOn": []
+            },
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "8618761c-207c-4272-8256-d8113ca490e9",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "Stage": {
+                    "value": "Bronze-Raw",
+                    "type": "Expression"
+                  },
+                  "RowCount": {
+                    "value": "@json(activity('Schema validation and load to Bronze').output.result.exitValue).RowsInserted",
+                    "type": "Expression"
+                  },
+                  "SourceSchema": {
+                    "value": "@item().SourceSchema",
+                    "type": "Expression"
+                  },
+                  "SourceTable": {
+                    "value": "@item().SourceTable",
+                    "type": "Expression"
+                  },
+                  "SourceSystem": {
+                    "value": "@pipeline().parameters.SourceSystem",
+                    "type": "Expression"
+                  },
+                  "Watermark": {
+                    "value": "@json(activity('Schema validation and load to Bronze').output.result.exitValue).Watermark",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "Update metadata Bronze",
+              "dependsOn": [
+                {
+                  "activity": "Schema validation and load to Bronze",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "8618761c-207c-4272-8256-d8113ca490e9",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "Stage": {
+                    "value": "Silver-Operational",
+                    "type": "Expression"
+                  },
+                  "RowCount": {
+                    "value": "@json(activity('Load to Silver Operational').output.result.exitValue).RowsInserted",
+                    "type": "Expression"
+                  },
+                  "SourceSchema": {
+                    "value": "@item().SourceSchema",
+                    "type": "Expression"
+                  },
+                  "SourceTable": {
+                    "value": "@item().SourceTable",
+                    "type": "Expression"
+                  },
+                  "SourceSystem": {
+                    "value": "@pipeline().parameters.SourceSystem",
+                    "type": "Expression"
+                  },
+                  "Watermark": {
+                    "value": "@json(activity('Load to Silver Operational').output.result.exitValue).Watermark",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "Update metadata Silver-Operational",
+              "dependsOn": [
+                {
+                  "activity": "Load to Silver Operational",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "SqlServerStoredProcedure",
+              "typeProperties": {
+                "storedProcedureName": "[dbo].[ViewCreator]",
+                "storedProcedureParameters": {
+                  "SourceSchema": {
+                    "value": {
+                      "value": "@item().SourceSchema",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "SourceSystem": {
+                    "value": {
+                      "value": "@item().SourceSystem",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  },
+                  "SourceTable": {
+                    "value": {
+                      "value": "@item().SourceTable",
+                      "type": "Expression"
+                    },
+                    "type": "String"
+                  }
+                }
+              },
+              "linkedService": {
+                "properties": {
+                  "type": "DataWarehouse",
+                  "typeProperties": {
+                    "artifactId": "@item().SilverSQLEndpoint",
+                    "endpoint": "@item().SilverSQLConnectionString"
+                  },
+                  "annotations": []
+                },
+                "name": "eeb997e3_3865_4af1_ba39_2a68c0e03e84"
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "Create Silver views",
+              "dependsOn": [
+                {
+                  "activity": "Update metadata Silver-Operational",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "5b017ccb-f08b-4f16-81e6-2a457bd78b9f",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "System": {
+                    "value": "@pipeline().parameters.SourceSystem",
+                    "type": "Expression"
+                  },
+                  "Schema": {
+                    "value": "@item().SourceSchema",
+                    "type": "Expression"
+                  },
+                  "Table": {
+                    "value": "@item().SourceTable",
+                    "type": "Expression"
+                  },
+                  "WhenExecuted": {
+                    "value": "Ingestion-out",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "Eject process",
+              "dependsOn": [
+                {
+                  "activity": "Create Silver views",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "name": "Iterate over source objects",
+        "dependsOn": [
+          {
+            "activity": "Register process",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "5b017ccb-f08b-4f16-81e6-2a457bd78b9f",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "System": {
+              "value": "@pipeline().parameters.SourceSystem",
+              "type": "Expression"
+            },
+            "WhenExecuted": "Ingestion-in",
+            "PipelineID": {
+              "value": "@pipeline().Pipeline",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "Register process",
+        "dependsOn": [
+          {
+            "activity": "Lookup metadata",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "SourceSystem": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "newvar": {
+        "type": "String"
+      },
+      "LandingPath": {
+        "type": "String"
+      },
+      "OutputConnector": {
+        "type": "String"
+      },
+      "Predicate": {
+        "type": "String"
+      }
+    }
+  }
+}

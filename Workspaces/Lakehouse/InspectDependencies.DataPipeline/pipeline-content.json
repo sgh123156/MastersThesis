@@ -1,0 +1,125 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "Wait until ready",
+        "type": "Until",
+        "dependsOn": [],
+        "typeProperties": {
+          "expression": {
+            "value": "@equals(activity('Check if can be run').output.firstRow.NotToRun,0)",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "name": "Delay if not ready",
+              "type": "IfCondition",
+              "dependsOn": [
+                {
+                  "activity": "Check if can be run",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ],
+              "typeProperties": {
+                "expression": {
+                  "value": "@equals(activity('Check if can be run').output.firstRow.NotToRun,1)",
+                  "type": "Expression"
+                },
+                "ifFalseActivities": [],
+                "ifTrueActivities": [
+                  {
+                    "name": "Delay processing",
+                    "type": "Wait",
+                    "dependsOn": [],
+                    "typeProperties": {
+                      "waitTimeInSeconds": 60
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Check if can be run",
+              "type": "Lookup",
+              "dependsOn": [],
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureOutput": false,
+                "secureInput": false
+              },
+              "typeProperties": {
+                "source": {
+                  "type": "DataWarehouseSource",
+                  "sqlReaderStoredProcedureName": "[lh].[GetDependencies]",
+                  "storedProcedureParameters": {
+                    "FromTo": {
+                      "type": "String",
+                      "value": {
+                        "value": "@pipeline().parameters.FromTo",
+                        "type": "Expression"
+                      }
+                    },
+                    "Schema": {
+                      "type": "String",
+                      "value": {
+                        "value": "@pipeline().parameters.Schema",
+                        "type": "Expression"
+                      }
+                    },
+                    "Table": {
+                      "type": "String",
+                      "value": {
+                        "value": "@pipeline().parameters.Table",
+                        "type": "Expression"
+                      }
+                    }
+                  },
+                  "queryTimeout": "02:00:00",
+                  "partitionOption": "None"
+                },
+                "datasetSettings": {
+                  "annotations": [],
+                  "linkedService": {
+                    "name": "Metadata",
+                    "properties": {
+                      "annotations": [],
+                      "type": "DataWarehouse",
+                      "typeProperties": {
+                        "endpoint": "o2ohi323u22ulebgw3gnntkcui-6fy2zjab46ou5gefexgqjfvh24.datawarehouse.fabric.microsoft.com",
+                        "artifactId": "6b10ef3e-c6d7-4eaf-b654-b8583631f850"
+                      }
+                    }
+                  },
+                  "type": "DataWarehouseTable",
+                  "schema": [],
+                  "typeProperties": {}
+                }
+              }
+            }
+          ],
+          "timeout": "0.12:00:00"
+        }
+      }
+    ],
+    "parameters": {
+      "Table": {
+        "type": "string"
+      },
+      "Schema": {
+        "type": "string"
+      },
+      "FromTo": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "random": {
+        "type": "String"
+      }
+    }
+  }
+}

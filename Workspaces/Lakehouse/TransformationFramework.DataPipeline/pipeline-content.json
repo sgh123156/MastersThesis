@@ -1,0 +1,673 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": "select * from [Metadata].[lh].[SilverEntity] \nWHERE IsEnabled = 1",
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "6b10ef3e-c6d7-4eaf-b654-b8583631f850",
+                  "endpoint": "o2ohi323u22ulebgw3gnntkcui-6fy2zjab46ou5gefexgqjfvh24.datawarehouse.fabric.microsoft.com"
+                },
+                "annotations": []
+              },
+              "name": "Metadata"
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Lookup Silver tables",
+        "dependsOn": []
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "items": {
+            "value": "@activity('Lookup Silver tables').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "1fb773d1-8da9-4460-bd52-498f63f4cbab",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "Table": {
+                    "value": "@item().SilverTable",
+                    "type": "Expression"
+                  },
+                  "Schema": {
+                    "value": "@item().SilverSchema",
+                    "type": "Expression"
+                  },
+                  "FromTo": {
+                    "value": "OperationalConformed",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "Check process status",
+              "dependsOn": []
+            },
+            {
+              "type": "TridentNotebook",
+              "typeProperties": {
+                "notebookId": "44d86708-9b39-4e96-a2a1-02f55d4715f9",
+                "workspaceId": "cac9ca61-0d6f-4a0f-9f32-ebc82c0b2536",
+                "parameters": {
+                  "Stage": {
+                    "value": {
+                      "value": "Silver Conformed",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SourceSchema": {
+                    "value": {
+                      "value": "@item().SilverSchema",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SourceTable": {
+                    "value": {
+                      "value": "@item().SilverTable",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "LoadMode": {
+                    "value": {
+                      "value": "@activity('Lookup parameters').output.firstRow.LoadMode",
+                      "type": "Expression"
+                    },
+                    "type": "int"
+                  },
+                  "Watermark": {
+                    "value": {
+                      "value": "@activity('Lookup parameters').output.firstRow.Watermark",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SourceSystem": {
+                    "value": {
+                      "value": "silver",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  }
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "Load to Silver Conformed",
+              "dependsOn": [
+                {
+                  "activity": "Lookup parameters",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "8618761c-207c-4272-8256-d8113ca490e9",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "Stage": {
+                    "value": "Silver-Conformed",
+                    "type": "Expression"
+                  },
+                  "RowCount": {
+                    "value": "@json(activity('Load to Silver Conformed').output.result.exitValue).RowsInserted",
+                    "type": "Expression"
+                  },
+                  "SourceSchema": {
+                    "value": "@item().SilverSchema",
+                    "type": "Expression"
+                  },
+                  "SourceTable": {
+                    "value": "@item().SilverTable",
+                    "type": "Expression"
+                  },
+                  "SourceSystem": {
+                    "value": "@item().SilverSystem",
+                    "type": "Expression"
+                  },
+                  "Watermark": {
+                    "value": "@json(activity('Load to Silver Conformed').output.result.exitValue).Watermark",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "Update metadata",
+              "dependsOn": [
+                {
+                  "activity": "Load to Silver Conformed",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "5b017ccb-f08b-4f16-81e6-2a457bd78b9f",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "System": {
+                    "value": "silver",
+                    "type": "Expression"
+                  },
+                  "Schema": {
+                    "value": "@item().SilverSchema",
+                    "type": "Expression"
+                  },
+                  "Table": {
+                    "value": "@item().SilverTable",
+                    "type": "Expression"
+                  },
+                  "WhenExecuted": {
+                    "value": "Conformity-out",
+                    "type": "Expression"
+                  },
+                  "PipelineID": {
+                    "value": "@pipeline().Pipeline",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "Eject process",
+              "dependsOn": [
+                {
+                  "activity": "Update metadata",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Lookup",
+              "typeProperties": {
+                "source": {
+                  "type": "DataWarehouseSource",
+                  "sqlReaderQuery": {
+                    "value": "SELECT sv.SilverSchema, sv.SilverTable, MIN(s.SilverOperationalTimestamp) AS Watermark, MAX(s.LoadMode) AS LoadMode\nFROM [lh].[SilverEntity] sv\n\tINNER JOIN [lh].[BronzeSilverDependencies] bsd\n\t\tON CONCAT(sv.SilverSchema, '_', sv.SilverTable) = bsd.SilverTable\n\tINNER JOIN [lh].[SourceEntity] s\n\t\tON bsd.BronzeTable = CONCAT(s.SourceSystem, '_', s.SourceSchema, '_', s.SourceTable)\n    WHERE sv.SilverSchema = '@{item().SilverSchema}' AND sv.SilverTable = '@{item().SilverTable}'\nGROUP BY sv.SilverSchema, sv.SilverTable",
+                    "type": "Expression"
+                  },
+                  "partitionOption": "None",
+                  "queryTimeout": "02:00:00"
+                },
+                "datasetSettings": {
+                  "type": "DataWarehouseTable",
+                  "schema": [],
+                  "linkedService": {
+                    "properties": {
+                      "type": "DataWarehouse",
+                      "typeProperties": {
+                        "artifactId": "6b10ef3e-c6d7-4eaf-b654-b8583631f850",
+                        "endpoint": "o2ohi323u22ulebgw3gnntkcui-6fy2zjab46ou5gefexgqjfvh24.datawarehouse.fabric.microsoft.com"
+                      },
+                      "annotations": []
+                    },
+                    "name": "Metadata"
+                  },
+                  "annotations": []
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "Lookup parameters",
+              "dependsOn": [
+                {
+                  "activity": "Check process status",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "name": "Iterate over Silver tables",
+        "dependsOn": [
+          {
+            "activity": "Register Silver process",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Wait",
+        "typeProperties": {
+          "waitTimeInSeconds": 1
+        },
+        "name": "Delay Gold execution",
+        "state": "Inactive",
+        "onInactiveMarkAs": "Succeeded",
+        "dependsOn": []
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": "select * from [Metadata].[lh].[GoldEntity] \nWHERE IsEnabled = 1",
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "6b10ef3e-c6d7-4eaf-b654-b8583631f850",
+                  "endpoint": "o2ohi323u22ulebgw3gnntkcui-6fy2zjab46ou5gefexgqjfvh24.datawarehouse.fabric.microsoft.com"
+                },
+                "annotations": []
+              },
+              "name": "Metadata"
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Lookup Gold tables",
+        "state": "Inactive",
+        "onInactiveMarkAs": "Succeeded",
+        "dependsOn": [
+          {
+            "activity": "Delay Gold execution",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "7861ab48-4520-4c78-80a2-3dd2c8c44f25",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "System": {
+              "value": "gold",
+              "type": "Expression"
+            },
+            "WhenExecuted": {
+              "value": "Presentation-in",
+              "type": "Expression"
+            },
+            "PipelineID": {
+              "value": "@pipeline().Pipeline",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "Register Gold process",
+        "state": "Inactive",
+        "onInactiveMarkAs": "Succeeded",
+        "dependsOn": [
+          {
+            "activity": "Lookup Gold tables",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "items": {
+            "value": "@activity('Lookup Gold tables').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "d021ee4b-b5f2-41ef-8dcd-274cf9a22cd5",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "Table": {
+                    "value": "@item().GoldTable",
+                    "type": "Expression"
+                  },
+                  "Schema": {
+                    "value": "@item().GoldSchema",
+                    "type": "Expression"
+                  },
+                  "FromTo": {
+                    "value": "ConformedGold",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "Check process status_copy1",
+              "dependsOn": []
+            },
+            {
+              "type": "TridentNotebook",
+              "typeProperties": {
+                "notebookId": "59813333-71c6-4168-b729-dba795029889",
+                "workspaceId": "bdd5f07f-a692-47ec-8656-f3cb7cb39295",
+                "parameters": {
+                  "GoldSchema": {
+                    "value": {
+                      "value": "@item().GoldSchema",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "GoldTable": {
+                    "value": {
+                      "value": "@item().GoldTable",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "LoadMode": {
+                    "value": {
+                      "value": "@item().LoadMode",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "SCD2Columns": {
+                    "value": {
+                      "value": "@item().SCD2Columns",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  },
+                  "Watermark": {
+                    "value": {
+                      "value": "@activity('Lookup watermark').output.firstRow.Watermark",
+                      "type": "Expression"
+                    },
+                    "type": "string"
+                  }
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "Load to Gold",
+              "dependsOn": [
+                {
+                  "activity": "Lookup watermark",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "2d82de84-6867-4da2-809e-56c206a95f96",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "Stage": {
+                    "value": "Gold",
+                    "type": "Expression"
+                  },
+                  "RowCount": {
+                    "value": "@json(activity('Load to Gold').output.result.exitValue).RowsInserted",
+                    "type": "Expression"
+                  },
+                  "SourceSchema": {
+                    "value": "@item().GoldSchema",
+                    "type": "Expression"
+                  },
+                  "SourceTable": {
+                    "value": "@item().GoldTable",
+                    "type": "Expression"
+                  },
+                  "SourceSystem": {
+                    "value": "gold",
+                    "type": "Expression"
+                  },
+                  "Watermark": {
+                    "value": "@json(activity('Load to Gold').output.result.exitValue).Watermark",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "Update metadata Gold",
+              "dependsOn": [
+                {
+                  "activity": "Load to Gold",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "7861ab48-4520-4c78-80a2-3dd2c8c44f25",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "System": {
+                    "value": "gold",
+                    "type": "Expression"
+                  },
+                  "Schema": {
+                    "value": "@item().GoldSchema",
+                    "type": "Expression"
+                  },
+                  "Table": {
+                    "value": "@item().GoldTable",
+                    "type": "Expression"
+                  },
+                  "WhenExecuted": {
+                    "value": "Presentation-out",
+                    "type": "Expression"
+                  },
+                  "PipelineID": {
+                    "value": "@pipeline().Pipeline",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "Eject process Gold",
+              "dependsOn": [
+                {
+                  "activity": "Update metadata Gold",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Lookup",
+              "typeProperties": {
+                "source": {
+                  "type": "DataWarehouseSource",
+                  "sqlReaderQuery": {
+                    "value": "\tSELECT ge.GoldSchema,ge.GoldTable, MIN(SilverConformedTimestamp) Watermark\n\tFROM [lh].[GoldEntity] ge\n\t\tINNER JOIN [lh].[SilverGoldDependencies] sgd\n\t\t\tON CONCAT(ge.GoldSchema,'_', ge.GoldTable) = sgd.GoldTable\n\t\tINNER JOIN [lh].[SilverEntity] se \n\t\t\tON CONCAT(se.SilverSchema, '_', se.SilverTable) = sgd.SilverTable\n    WHERE ge.GoldSchema = '@{item().GoldSchema}' AND ge.GoldTable = '@{item().GoldTable}'\n\tGROUP BY GoldSchema, ge.GoldTable",
+                    "type": "Expression"
+                  },
+                  "partitionOption": "None",
+                  "queryTimeout": "02:00:00"
+                },
+                "datasetSettings": {
+                  "type": "DataWarehouseTable",
+                  "schema": [],
+                  "linkedService": {
+                    "properties": {
+                      "type": "DataWarehouse",
+                      "typeProperties": {
+                        "artifactId": "6b10ef3e-c6d7-4eaf-b654-b8583631f850",
+                        "endpoint": "o2ohi323u22ulebgw3gnntkcui-6fy2zjab46ou5gefexgqjfvh24.datawarehouse.fabric.microsoft.com"
+                      },
+                      "annotations": []
+                    },
+                    "name": "Metadata"
+                  },
+                  "annotations": []
+                }
+              },
+              "policy": {
+                "timeout": "0.12:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureInput": false,
+                "secureOutput": false
+              },
+              "name": "Lookup watermark",
+              "dependsOn": [
+                {
+                  "activity": "Check process status_copy1",
+                  "dependencyConditions": [
+                    "Succeeded"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "name": "Iterate over Gold tables",
+        "state": "Inactive",
+        "onInactiveMarkAs": "Succeeded",
+        "dependsOn": [
+          {
+            "activity": "Register Gold process",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ExecutePipeline",
+        "typeProperties": {
+          "pipeline": {
+            "referenceName": "5b017ccb-f08b-4f16-81e6-2a457bd78b9f",
+            "type": "PipelineReference"
+          },
+          "parameters": {
+            "System": {
+              "value": "silver",
+              "type": "Expression"
+            },
+            "WhenExecuted": "Conformity-in",
+            "PipelineID": {
+              "value": "@pipeline().Pipeline",
+              "type": "Expression"
+            }
+          },
+          "waitOnCompletion": true
+        },
+        "policy": {
+          "secureInput": false
+        },
+        "name": "Register Silver process",
+        "dependsOn": [
+          {
+            "activity": "Lookup Silver tables",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

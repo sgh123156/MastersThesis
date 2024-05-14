@@ -1,0 +1,10 @@
+CREATE TABLE [lh].[GoldEntity](
+	[IsEnabled] [bit] NULL,
+	[GoldSystem] [varchar](50) NULL,
+	[GoldSchema] [varchar](50) NULL,
+	[GoldTable] [varchar](150) NULL,
+	[LoadMode] [int] NULL,
+	[SCD2Columns] [varchar](200) NULL,
+	[GoldTimestamp] [datetime2](2) NULL,
+	[RowsIngestedGold] [int] NULL
+) ON [PRIMARY]
